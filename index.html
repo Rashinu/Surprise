@@ -43,26 +43,24 @@
   }
   #image-container {
     margin-top: 20px;
-    position: relative;
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, 220px); /* 2 sütun */
+    grid-auto-rows: 220px; /* satır yüksekliği */
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 10px;
+    gap: 15px; /* resimler arası boşluk */
   }
-  .fade-in {
+  .photo {
+    width: 220px;
+    height: 220px;
+    border-radius: 15px;
+    object-fit: cover;
+    box-shadow: 0 0 15px pink;
     opacity: 0;
     transition: opacity 1.5s ease-in;
   }
-  .fade-in.show {
+  .photo.show {
     opacity: 1;
   }
-  .photo {
-  width: 200px;
-  height: 200px;
-  border-radius: 15px;
-  object-fit: cover;
-  box-shadow: 0 0 15px pink;
-}
   button {
     font-size: 1em;
     padding: 10px 20px;
@@ -98,7 +96,7 @@
 </head>
 <body>
 
-<audio id="muzik" src="sarki.mp3" loop></audio>
+<audio id="muzik" src="sarki.mp3"></audio>
 
 <canvas id="canvas"></canvas>
 
@@ -135,7 +133,6 @@ const mesajlar = [
   "Gözlerine baktığımda dünyayı unutuyorum 💞"
 ];
 
-// 📸 Fotoğraflar (kendi fotoğraflarının dosya adlarını buraya yaz)
 const fotoListesi = [
   "foto1.jpg",
   "foto2.jpg",
@@ -231,7 +228,7 @@ async function fotoGoster(container, index){
   img.className = "photo fade-in";
   container.appendChild(img);
   setTimeout(()=> img.classList.add('show'), 50);
-  await new Promise(r=>setTimeout(r, 1000)); // 1 saniye bekle
+  await new Promise(r=>setTimeout(r, 500));
 }
 
 const mesajDiv = document.getElementById('mesaj');
@@ -246,15 +243,15 @@ async function surprizBaslat(){
   imageContainer.innerHTML = "";
 
   await animasyonYaz(mesajDiv, `💖 Merhaba ${isim} 💖`, 80);
-  await fotoGoster(imageContainer, 0);
-
   await animasyonYaz(mesajDiv, `${birlikte_gun} gündür seninle hayat daha güzel 💞`, 60);
-  await fotoGoster(imageContainer, 1);
+
+  // Tüm fotoğrafları sırayla göster
+  for (let i = 0; i < fotoListesi.length; i++){
+    await fotoGoster(imageContainer, i);
+  }
 
   const secilen = mesajlar[Math.floor(Math.random()*mesajlar.length)];
   await animasyonYaz(mesajDiv, secilen, 60);
-  await fotoGoster(imageContainer, 2);
-
   await animasyonYaz(mesajDiv, "Seni Çok Seviyorum 💘", 80);
   await zamanCizelgesiGoster(timelineDiv);
 
