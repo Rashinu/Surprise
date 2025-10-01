@@ -14,41 +14,46 @@
     overflow-x: hidden;
   }
   #canvas {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
-    z-index: 0;
+    z-index: 1;
   }
   #content {
     position: relative;
     z-index: 10;
     text-align: center;
-    padding: 5% 2%;
+    padding-top: 5%;
+    max-width: 95%;
+    margin: 0 auto;
   }
   h1 {
     font-size: 2em;
     color: pink;
-    margin-bottom: 20px;
   }
-  #mesaj, #timeline {
-    margin: 10px auto;
-    max-width: 95%;
-    white-space: pre-line;
+  #mesaj {
+    font-size: 1.2em;
+    margin: 20px auto;
+    max-width: 90%;
     word-wrap: break-word;
+    white-space: pre-line;
   }
-  #mesaj { font-size: 1.2em; }
-  #timeline { font-size: 1em; color: lightpink; }
-
+  #timeline {
+    font-size: 1em;
+    color: lightpink;
+    margin-top: 20px;
+    white-space: pre-line;
+  }
   #image-container {
     margin-top: 20px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
     justify-items: center;
   }
   .photo {
     width: 100%;
-    max-width: 220px;
+    max-width: 150px;
     aspect-ratio: 1/1;
     border-radius: 15px;
     object-fit: cover;
@@ -56,21 +61,33 @@
     opacity: 0;
     transition: opacity 1.5s ease-in;
   }
-  .photo.show { opacity: 1; }
-
+  .fade-in.show {
+    opacity: 1;
+  }
   button {
     font-size: 1em;
-    padding: 12px 20px;
+    padding: 10px 20px;
     margin: 10px;
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    min-width: 140px;
   }
-  #surprise-btn { background-color: deeppink; color: white; }
-  #replay-btn { background-color: hotpink; color: white; display: none; }
-  #mute-btn { background-color: gray; color: white; }
-
+  #surprise-btn {
+    background-color: deeppink;
+    color: white;
+  }
+  #replay-btn {
+    background-color: hotpink;
+    color: white;
+  }
+  #mute-btn {
+    background-color: gray;
+    color: white;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 20;
+  }
   #footer {
     position: fixed;
     bottom: 10px;
@@ -79,18 +96,23 @@
     color: lightpink;
     font-size: 0.9em;
   }
-
-  @media (max-width: 500px) {
+  @media (max-width: 400px) {
+    #image-container {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .photo {
+      max-width: 120px;
+    }
     h1 { font-size: 1.5em; }
     #mesaj { font-size: 1em; }
-    #timeline { font-size: 0.9em; }
-    button { font-size: 0.9em; padding: 10px 15px; min-width: 120px; }
   }
 </style>
 </head>
 <body>
 
 <audio id="muzik" src="sarki.mp3" loop></audio>
+
 <canvas id="canvas"></canvas>
 
 <div id="content">
@@ -99,7 +121,7 @@
   <div id="timeline"></div>
   <div id="image-container"></div>
   <button id="surprise-btn">💌 Sürprizi Göster 💌</button>
-  <button id="replay-btn">🔁 Tekrar Oynat</button>
+  <button id="replay-btn" style="display:none;">🔁 Tekrar Oynat</button>
   <button id="mute-btn">🔇 Sessize Al</button>
 </div>
 
@@ -112,11 +134,11 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 const isim = "Cennet Eda";
-const tanisma_tarih = new Date(2025,7,14);
-const sevgili_tarih = new Date(2025,7,14);
+const tanisma_tarih = new Date(2025, 7, 14);
+const sevgili_tarih = new Date(2025, 7, 14);
 const bugun = new Date();
-let birlikte_gun = Math.floor((bugun-sevgili_tarih)/(1000*60*60*24));
-if(birlikte_gun<0) birlikte_gun=0;
+let birlikte_gun = Math.floor((bugun - sevgili_tarih)/(1000*60*60*24));
+if (birlikte_gun < 0) birlikte_gun = 0;
 
 const mesajlar = [
   "Sen benim en güzel tesadüfümsün 💫",
@@ -128,115 +150,134 @@ const mesajlar = [
 
 const fotoListesi = ["foto1.jpg","foto2.jpg","foto3.jpg","foto4.jpg"];
 
-const renkler = ["pink","lightpink","white"];
-const sekiller = ["⭐","💖","✨","🌸","💫"];
+// Arka plan animasyonu
+const renkler = ["pink", "lightpink", "white"];
+const sekiller = ["⭐", "💖", "✨", "🌸", "💫"];
 let objeler = [];
-for(let i=0;i<30;i++){
+for (let i=0;i<30;i++){
   objeler.push({
     x: Math.random()*canvas.width,
     y: Math.random()*canvas.height,
-    size: 14+Math.random()*10,
+    size: 14 + Math.random()*10,
     text: sekiller[Math.floor(Math.random()*sekiller.length)],
     color: renkler[Math.floor(Math.random()*renkler.length)],
-    speed: 0.5+Math.random()*1.5
+    speed: 0.5 + Math.random()*1.5
   });
 }
-function animasyon(){
+function animasyon() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  objeler.forEach(obj=>{
-    ctx.font=`${obj.size}px Arial`;
-    ctx.fillStyle=obj.color;
-    ctx.fillText(obj.text,obj.x,obj.y);
-    obj.y+=obj.speed;
-    if(obj.y>canvas.height)obj.y=-10;
+  objeler.forEach(obj => {
+    ctx.font = `${obj.size}px Arial`;
+    ctx.fillStyle = obj.color;
+    ctx.fillText(obj.text, obj.x, obj.y);
+    obj.y += obj.speed;
+    if(obj.y > canvas.height) obj.y = -10;
   });
   requestAnimationFrame(animasyon);
 }
 animasyon();
 
 // Müzik
-const muzik=document.getElementById('muzik');
-muzik.volume=0;
-const muteBtn=document.getElementById('mute-btn');
-muteBtn.addEventListener('click',()=>{muzik.muted=!muzik.muted; muteBtn.textContent=muzik.muted?"🔊 Aç":"🔇 Sessize Al";});
-async function muzikBaslat(){
-  try{
+const muzik = document.getElementById('muzik');
+muzik.volume = 0;
+const muteBtn = document.getElementById('mute-btn');
+muteBtn.addEventListener('click', () => {
+  muzik.muted = !muzik.muted;
+  muteBtn.textContent = muzik.muted ? "🔊 Aç" : "🔇 Sessize Al";
+});
+async function muzikBaslat() {
+  try {
     await muzik.play();
-    muzik.loop=true;
-    let v=0;
-    const fade=setInterval(()=>{
-      v+=0.05;
-      if(v>=1){v=1; clearInterval(fade);}
-      muzik.volume=v;
-    },100);
-  }catch(e){console.log("Müzik oynatılamadı:",e);}
+    muzik.loop = true;
+    let v = 0;
+    const fade = setInterval(() => {
+      v += 0.05;
+      if (v >= 1) { v = 1; clearInterval(fade); }
+      muzik.volume = v;
+    }, 100);
+  } catch(e) { console.log("Müzik oynatılamadı:", e); }
 }
 
-// Animasyonlu yazı
-function animasyonYaz(el,txt,hiz=50){
-  return new Promise(resolve=>{
-    el.textContent="";
+// Yazı animasyonu
+function animasyonYaz(element, metin, hiz=50){
+  return new Promise(resolve => {
+    element.textContent = "";
     let i=0;
-    function step(){if(i<=txt.length){el.textContent=txt.slice(0,i);i++;setTimeout(step,hiz);}else resolve();}
+    function step(){
+      if(i<=metin.length){
+        element.textContent = metin.slice(0,i);
+        i++;
+        setTimeout(step, hiz);
+      } else resolve();
+    }
     step();
   });
 }
 
 // Zaman çizelgesi
-async function zamanCizelgesiGoster(el){
-  const zamanlar=[
+async function zamanCizelgesiGoster(element){
+  const zamanlar = [
     `📅 Tanışma Tarihi: ${tanisma_tarih.toLocaleDateString('tr-TR',{day:'2-digit', month:'long', year:'numeric'})}`,
     `💞 Sevgili Olduğumuz Gün: ${sevgili_tarih.toLocaleDateString('tr-TR',{day:'2-digit', month:'long', year:'numeric'})}`,
     `🌸 Bugün: ${bugun.toLocaleDateString('tr-TR',{day:'2-digit', month:'long', year:'numeric'})}`
   ];
-  el.textContent="";
-  for(let z of zamanlar){ el.textContent+=z+"\n"; await new Promise(r=>setTimeout(r,1000)); }
+  element.textContent = "";
+  for(let z of zamanlar){
+    element.textContent += z + "\n";
+    await new Promise(r=>setTimeout(r,1000));
+  }
 }
 
 // Fotoğraf gösterimi
-async function fotoGoster(container,index){
-  if(index>=fotoListesi.length) return;
-  const img=document.createElement('img');
-  img.src=fotoListesi[index];
-  img.className="photo";
+async function fotoGoster(container, index){
+  if (index >= fotoListesi.length) return;
+  const img = document.createElement('img');
+  img.src = fotoListesi[index];
+  img.className = "photo fade-in";
   container.appendChild(img);
-  setTimeout(()=>img.classList.add('show'),50);
-  await new Promise(r=>setTimeout(r,500));
+  setTimeout(()=> img.classList.add('show'), 50);
+  await new Promise(r=>setTimeout(r, 1000));
 }
 
-// Ana sürpriz fonksiyonu
-const mesajDiv=document.getElementById('mesaj');
-const timelineDiv=document.getElementById('timeline');
-const surpriseBtn=document.getElementById('surprise-btn');
-const replayBtn=document.getElementById('replay-btn');
-const imageContainer=document.getElementById('image-container');
+const mesajDiv = document.getElementById('mesaj');
+const timelineDiv = document.getElementById('timeline');
+const surpriseBtn = document.getElementById('surprise-btn');
+const replayBtn = document.getElementById('replay-btn');
+const imageContainer = document.getElementById('image-container');
 
 async function surprizBaslat(){
   await muzikBaslat();
-  surpriseBtn.disabled=true;
-  imageContainer.innerHTML="";
-  await animasyonYaz(mesajDiv,`💖 Merhaba ${isim} 💖`,80);
-  await fotoGoster(imageContainer,0);
-  await animasyonYaz(mesajDiv,`${birlikte_gun} gündür seninle hayat daha güzel 💞`,60);
-  await fotoGoster(imageContainer,1);
-  const secilen=mesajlar[Math.floor(Math.random()*mesajlar.length)];
-  await animasyonYaz(mesajDiv,secilen,60);
-  await fotoGoster(imageContainer,2);
-  await animasyonYaz(mesajDiv,"Seni Çok Seviyorum 💘",80);
-  await fotoGoster(imageContainer,3);
+  surpriseBtn.disabled = true;
+  imageContainer.innerHTML = "";
+
+  await animasyonYaz(mesajDiv, `💖 Merhaba ${isim} 💖`, 80);
+  await fotoGoster(imageContainer, 0);
+
+  await animasyonYaz(mesajDiv, `${birlikte_gun} gündür seninle hayat daha güzel 💞`, 60);
+  await fotoGoster(imageContainer, 1);
+
+  const secilen = mesajlar[Math.floor(Math.random()*mesajlar.length)];
+  await animasyonYaz(mesajDiv, secilen, 60);
+  await fotoGoster(imageContainer, 2);
+
+  await animasyonYaz(mesajDiv, "Seni Çok Seviyorum 💘", 80);
+  await fotoGoster(imageContainer, 3);
   await zamanCizelgesiGoster(timelineDiv);
-  replayBtn.style.display="inline-block";
+
+  replayBtn.style.display = "inline-block";
 }
 
-surpriseBtn.addEventListener('click',surprizBaslat);
-replayBtn.addEventListener('click',async()=>{
-  replayBtn.style.display="none";
-  timelineDiv.textContent="";
-  mesajDiv.textContent="";
-  imageContainer.innerHTML="";
-  surpriseBtn.disabled=false;
+surpriseBtn.addEventListener('click', surprizBaslat);
+
+replayBtn.addEventListener('click', async ()=>{
+  replayBtn.style.display = "none";
+  timelineDiv.textContent = "";
+  mesajDiv.textContent = "";
+  imageContainer.innerHTML = "";
+  surpriseBtn.disabled = false;
   await surprizBaslat();
 });
 </script>
+
 </body>
 </html>
